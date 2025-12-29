@@ -2,266 +2,240 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Navegador Web</title>
+<title>CatWeb Editor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-
-* { box-sizing: border-box; }
-
 body {
   margin: 0;
-  font-family: Inter, sans-serif;
-  background: #0f1115;
+  font-family: Arial, sans-serif;
+  background: #111;
   color: #fff;
-  height: 100vh;
-  overflow: hidden;
 }
 
-/* ===== ANIMAÇÃO ===== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* ===== HOME ===== */
+/* Tela inicial */
 #home {
-  height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  animation: fadeIn 0.6s ease;
+  justify-content: center;
+  height: 100vh;
 }
 
-#searchBox {
-  width: 90%;
-  max-width: 600px;
-  padding: 16px 22px;
+#home button {
+  padding: 15px 30px;
   font-size: 18px;
-  border-radius: 30px;
-  border: none;
-  outline: none;
-  background: #1b1e24;
-  color: #fff;
-}
-
-#suggestions {
-  margin-top: 22px;
-  opacity: 0.7;
-  text-align: center;
-}
-
-.suggestion {
   cursor: pointer;
-  margin: 6px 0;
-}
-.suggestion:hover {
-  text-decoration: underline;
 }
 
-/* ===== RESULTADOS ===== */
-#results {
+/* Editor */
+#editor {
   display: none;
+  height: 100vh;
+}
+
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #1a1a1a;
+}
+
+#topbar button {
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
+#canvas {
+  position: relative;
+  background: #fff;
+  height: calc(100vh - 50px);
+  overflow: auto;
+}
+
+/* Blocos */
+.block {
+  position: absolute;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.frame {
+  border: 2px dashed #000;
+  min-width: 120px;
+  min-height: 80px;
+}
+
+.btn {
+  background: #007bff;
+  color: #fff;
+  border-radius: 4px;
+}
+
+/* Painéis */
+.panel {
+  position: fixed;
+  top: 60px;
+  right: 10px;
+  background: #222;
+  padding: 10px;
+  border-radius: 5px;
+  display: none;
+  width: 200px;
+}
+
+.panel button {
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+/* Modal config */
+#config {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#configBox {
+  background: #222;
   padding: 20px;
-  height: 100vh;
-  overflow-y: auto;
+  width: 300px;
 }
 
-.result {
-  padding: 16px;
-  border-bottom: 1px solid #2a2d34;
-  cursor: pointer;
-}
-.result:hover { background: #1b1e24; }
-
-.result-title {
-  font-size: 18px;
-  font-weight: 600;
-}
-.result-url {
-  font-size: 14px;
-  color: #7dd3fc;
-  word-break: break-all;
-}
-.result-desc {
-  font-size: 14px;
-  opacity: 0.8;
-  margin-top: 6px;
-}
-
-/* ===== LEITOR ===== */
-#reader {
-  display: none;
-  padding: 30px;
-  height: 100vh;
-  overflow-y: auto;
-  background: #0f1115;
-  animation: fadeIn 0.4s ease;
-}
-
-#reader img {
-  max-width: 100%;
-  border-radius: 8px;
-  margin: 12px 0;
-}
-
-#reader a {
-  color: #7dd3fc;
-}
-
-.credit {
-  font-size: 13px;
-  opacity: 0.6;
-  margin-bottom: 20px;
-}
-
-button {
-  margin: 10px 10px 0 0;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  background: #1b1e24;
-  color: #fff;
-  cursor: pointer;
-}
-button:hover {
-  background: #2a2d34;
+#configBox input, #configBox select {
+  width: 100%;
+  margin-bottom: 10px;
 }
 </style>
 </head>
-
 <body>
 
 <!-- HOME -->
 <div id="home">
-  <input id="searchBox" placeholder="Pesquisar ou digitar URL..." />
-  <div id="suggestions">
-    <div class="suggestion">como funciona javascript</div>
-    <div class="suggestion">wikipedia</div>
-    <div class="suggestion">notícias tecnologia</div>
-    <div class="suggestion">clima hoje</div>
+  <h1>CatWeb</h1>
+  <button onclick="start()">Criar</button>
+</div>
+
+<!-- EDITOR -->
+<div id="editor">
+  <div id="topbar">
+    <div>
+      <button onclick="togglePanel('items')">Itens</button>
+      <button onclick="togglePanel('explorer')">Explorer</button>
+    </div>
+    <div id="domain"></div>
+  </div>
+
+  <div id="canvas"></div>
+</div>
+
+<!-- ITENS -->
+<div class="panel" id="items">
+  <button onclick="addBlock('frame')">Frame</button>
+  <button onclick="addBlock('button')">Button</button>
+</div>
+
+<!-- EXPLORER -->
+<div class="panel" id="explorer"></div>
+
+<!-- CONFIG -->
+<div id="config">
+  <div id="configBox">
+    <h3>Configuração</h3>
+    <input id="confName" placeholder="Nome">
+    <select id="confColor">
+      <option value="#007bff">Azul</option>
+      <option value="#28a745">Verde</option>
+      <option value="#dc3545">Vermelho</option>
+      <option value="custom">HEX</option>
+    </select>
+    <input id="confHex" placeholder="#ffffff">
+    <button onclick="saveConfig()">Salvar</button>
   </div>
 </div>
 
-<!-- RESULTADOS -->
-<div id="results"></div>
-
-<!-- LEITOR -->
-<div id="reader"></div>
-
 <script>
-const home = document.getElementById("home");
-const results = document.getElementById("results");
-const reader = document.getElementById("reader");
-const searchBox = document.getElementById("searchBox");
+let blocks = JSON.parse(localStorage.getItem("catweb_blocks")) || [];
+let currentBlock = null;
 
-document.querySelectorAll(".suggestion").forEach(s => {
-  s.onclick = () => startSearch(s.innerText);
-});
-
-searchBox.addEventListener("keydown", e => {
-  if (e.key === "Enter") startSearch(searchBox.value);
-});
-
-function isURL(text) {
-  return text.includes(".") && !text.includes(" ");
+function start() {
+  const d = prompt("Escolha domínio (.com, .git, .gg)");
+  document.getElementById("domain").innerText = d || ".com";
+  document.getElementById("home").style.display = "none";
+  document.getElementById("editor").style.display = "block";
+  render();
 }
 
-function startSearch(query) {
-  if (!query) return;
+function togglePanel(id) {
+  document.querySelectorAll(".panel").forEach(p => p.style.display = "none");
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "block" ? "none" : "block";
+}
 
-  if (isURL(query)) {
-    openAsReader(query.startsWith("http") ? query : "https://" + query);
-    return;
+function addBlock(type) {
+  const b = {
+    id: Date.now(),
+    type,
+    name: type,
+    color: type === "button" ? "#007bff" : "#000",
+    x: 50,
+    y: 50
+  };
+  blocks.push(b);
+  save();
+  render();
+}
+
+function render() {
+  const canvas = document.getElementById("canvas");
+  canvas.innerHTML = "";
+  blocks.forEach(b => {
+    const el = document.createElement("div");
+    el.className = `block ${b.type === "button" ? "btn" : "frame"}`;
+    el.style.left = b.x + "px";
+    el.style.top = b.y + "px";
+    el.style.background = b.type === "button" ? b.color : "transparent";
+    el.style.borderColor = b.color;
+    el.innerText = b.name;
+    el.ondblclick = () => openConfig(b);
+    canvas.appendChild(el);
+  });
+  updateExplorer();
+}
+
+function updateExplorer() {
+  const ex = document.getElementById("explorer");
+  ex.innerHTML = "<b>Elementos</b><br>";
+  blocks.forEach(b => {
+    ex.innerHTML += "- " + b.name + "<br>";
+  });
+}
+
+function openConfig(b) {
+  currentBlock = b;
+  document.getElementById("confName").value = b.name;
+  document.getElementById("confColor").value = b.color;
+  document.getElementById("config").style.display = "flex";
+}
+
+function saveConfig() {
+  const name = document.getElementById("confName").value;
+  let color = document.getElementById("confColor").value;
+  if (color === "custom") {
+    color = document.getElementById("confHex").value;
   }
-
-  showDuckResult(query);
+  currentBlock.name = name;
+  currentBlock.color = color;
+  save();
+  render();
+  document.getElementById("config").style.display = "none";
 }
 
-/* ===== BUSCA ===== */
-function showDuckResult(query) {
-  home.style.display = "none";
-  reader.style.display = "none";
-  results.style.display = "block";
-
-  const duckURL = "https://duckduckgo.com/?q=" + encodeURIComponent(query);
-
-  results.innerHTML = `
-    <div class="result" onclick="openAsReader('${duckURL}')">
-      <div class="result-title">Resultados para "${query}"</div>
-      <div class="result-url">${duckURL}</div>
-      <div class="result-desc">
-        Visualizar resultados adaptados dentro da plataforma.
-      </div>
-    </div>
-  `;
-}
-
-/* ===== LEITOR ===== */
-function openAsReader(url) {
-  home.style.display = "none";
-  results.style.display = "none";
-  reader.style.display = "block";
-  reader.innerHTML = "<p>Carregando página...</p>";
-
-  fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url))
-    .then(r => r.text())
-    .then(html => renderPage(html, url))
-    .catch(() => showFail(url));
-}
-
-function renderPage(html, sourceURL) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  doc.querySelectorAll("script, iframe, noscript").forEach(e => e.remove());
-
-  doc.querySelectorAll("a").forEach(a => {
-    try {
-      a.href = new URL(a.getAttribute("href"), sourceURL).href;
-      a.onclick = e => {
-        e.preventDefault();
-        openAsReader(a.href);
-      };
-    } catch {}
-  });
-
-  doc.querySelectorAll("img").forEach(img => {
-    try {
-      img.src = new URL(img.getAttribute("src"), sourceURL).href;
-    } catch {}
-  });
-
-  const content =
-    doc.querySelector("article") ||
-    doc.querySelector("main") ||
-    doc.body;
-
-  reader.innerHTML = `
-    <div class="credit">
-      Conteúdo adaptado de:
-      <a href="${sourceURL}" target="_blank">${sourceURL}</a>
-    </div>
-    ${content.innerHTML}
-  `;
-}
-
-function showFail(url) {
-  reader.innerHTML = `
-    <h2>Falha no carregamento</h2>
-    <p>Não foi possível adaptar esta página.</p>
-    <button onclick="openAsReader('${url}')">Tentar novamente</button>
-    <button onclick="redirectExternal('${url}')">Abrir fora</button>
-  `;
-}
-
-function redirectExternal(url) {
-  const ok = confirm(
-    "Você será redirecionado para uma URL fora da plataforma e outro navegador.\nDeseja continuar?"
-  );
-  if (ok) window.open(url, "_blank");
+function save() {
+  localStorage.setItem("catweb_blocks", JSON.stringify(blocks));
 }
 </script>
 
