@@ -8,9 +8,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -21,21 +19,26 @@ body {
   overflow: hidden;
 }
 
-/* ===== TELA INICIAL ===== */
+/* ===== ANIMAÇÃO ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
 
+/* ===== HOME ===== */
 #home {
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  height: 100vh;
+  align-items: center;
   animation: fadeIn 0.6s ease;
 }
 
 #searchBox {
   width: 90%;
   max-width: 600px;
-  padding: 16px 20px;
+  padding: 16px 22px;
   font-size: 18px;
   border-radius: 30px;
   border: none;
@@ -45,22 +48,20 @@ body {
 }
 
 #suggestions {
-  margin-top: 20px;
-  text-align: center;
+  margin-top: 22px;
   opacity: 0.7;
+  text-align: center;
 }
 
 .suggestion {
   cursor: pointer;
   margin: 6px 0;
 }
-
 .suggestion:hover {
   text-decoration: underline;
 }
 
 /* ===== RESULTADOS ===== */
-
 #results {
   display: none;
   padding: 20px;
@@ -73,37 +74,67 @@ body {
   border-bottom: 1px solid #2a2d34;
   cursor: pointer;
 }
-
-.result:hover {
-  background: #1b1e24;
-}
+.result:hover { background: #1b1e24; }
 
 .result-title {
   font-size: 18px;
   font-weight: 600;
 }
-
 .result-url {
   font-size: 14px;
   color: #7dd3fc;
   word-break: break-all;
 }
-
 .result-desc {
   font-size: 14px;
   opacity: 0.8;
   margin-top: 6px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+/* ===== LEITOR ===== */
+#reader {
+  display: none;
+  padding: 30px;
+  height: 100vh;
+  overflow-y: auto;
+  background: #0f1115;
+  animation: fadeIn 0.4s ease;
+}
+
+#reader img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+#reader a {
+  color: #7dd3fc;
+}
+
+.credit {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 20px;
+}
+
+button {
+  margin: 10px 10px 0 0;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #1b1e24;
+  color: #fff;
+  cursor: pointer;
+}
+button:hover {
+  background: #2a2d34;
 }
 </style>
 </head>
+
 <body>
 
-<!-- TELA INICIAL -->
+<!-- HOME -->
 <div id="home">
   <input id="searchBox" placeholder="Pesquisar ou digitar URL..." />
   <div id="suggestions">
@@ -117,13 +148,17 @@ body {
 <!-- RESULTADOS -->
 <div id="results"></div>
 
+<!-- LEITOR -->
+<div id="reader"></div>
+
 <script>
-const searchBox = document.getElementById("searchBox");
 const home = document.getElementById("home");
 const results = document.getElementById("results");
+const reader = document.getElementById("reader");
+const searchBox = document.getElementById("searchBox");
 
-document.querySelectorAll(".suggestion").forEach(el => {
-  el.onclick = () => startSearch(el.innerText);
+document.querySelectorAll(".suggestion").forEach(s => {
+  s.onclick = () => startSearch(s.innerText);
 });
 
 searchBox.addEventListener("keydown", e => {
@@ -138,42 +173,95 @@ function startSearch(query) {
   if (!query) return;
 
   if (isURL(query)) {
-    let url = query.startsWith("http") ? query : "https://" + query;
-    window.open(url, "_blank");
+    openAsReader(query.startsWith("http") ? query : "https://" + query);
     return;
   }
 
-  loadDuckResults(query);
+  showDuckResult(query);
 }
 
-function loadDuckResults(query) {
+/* ===== BUSCA ===== */
+function showDuckResult(query) {
   home.style.display = "none";
+  reader.style.display = "none";
   results.style.display = "block";
-  results.innerHTML = "<p>Buscando resultados...</p>";
 
-  const searchURL =
-    "https://duckduckgo.com/html/?q=" + encodeURIComponent(query);
+  const duckURL = "https://duckduckgo.com/?q=" + encodeURIComponent(query);
 
-  // GitHub Pages não pode ler HTML do Duck,
-  // então mostramos resultados como links diretos
   results.innerHTML = `
-    <div class="result" onclick="openExternal('${searchURL}')">
-      <div class="result-title">Ver resultados no DuckDuckGo</div>
-      <div class="result-url">${searchURL}</div>
+    <div class="result" onclick="openAsReader('${duckURL}')">
+      <div class="result-title">Resultados para "${query}"</div>
+      <div class="result-url">${duckURL}</div>
       <div class="result-desc">
-        Os resultados serão exibidos fora da plataforma.
+        Visualizar resultados adaptados dentro da plataforma.
       </div>
     </div>
   `;
 }
 
-function openExternal(url) {
-  const confirmLeave = confirm(
-    "Você será redirecionado para uma URL fora da plataforma.\nDeseja continuar?"
+/* ===== LEITOR ===== */
+function openAsReader(url) {
+  home.style.display = "none";
+  results.style.display = "none";
+  reader.style.display = "block";
+  reader.innerHTML = "<p>Carregando página...</p>";
+
+  fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url))
+    .then(r => r.text())
+    .then(html => renderPage(html, url))
+    .catch(() => showFail(url));
+}
+
+function renderPage(html, sourceURL) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  doc.querySelectorAll("script, iframe, noscript").forEach(e => e.remove());
+
+  doc.querySelectorAll("a").forEach(a => {
+    try {
+      a.href = new URL(a.getAttribute("href"), sourceURL).href;
+      a.onclick = e => {
+        e.preventDefault();
+        openAsReader(a.href);
+      };
+    } catch {}
+  });
+
+  doc.querySelectorAll("img").forEach(img => {
+    try {
+      img.src = new URL(img.getAttribute("src"), sourceURL).href;
+    } catch {}
+  });
+
+  const content =
+    doc.querySelector("article") ||
+    doc.querySelector("main") ||
+    doc.body;
+
+  reader.innerHTML = `
+    <div class="credit">
+      Conteúdo adaptado de:
+      <a href="${sourceURL}" target="_blank">${sourceURL}</a>
+    </div>
+    ${content.innerHTML}
+  `;
+}
+
+function showFail(url) {
+  reader.innerHTML = `
+    <h2>Falha no carregamento</h2>
+    <p>Não foi possível adaptar esta página.</p>
+    <button onclick="openAsReader('${url}')">Tentar novamente</button>
+    <button onclick="redirectExternal('${url}')">Abrir fora</button>
+  `;
+}
+
+function redirectExternal(url) {
+  const ok = confirm(
+    "Você será redirecionado para uma URL fora da plataforma e outro navegador.\nDeseja continuar?"
   );
-  if (confirmLeave) {
-    window.open(url, "_blank");
-  }
+  if (ok) window.open(url, "_blank");
 }
 </script>
 
