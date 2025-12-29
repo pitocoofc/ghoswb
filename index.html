@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Navegador Web</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  background: #0f1115;
+  color: #fff;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== TELA INICIAL ===== */
+
+#home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  animation: fadeIn 0.6s ease;
+}
+
+#searchBox {
+  width: 90%;
+  max-width: 600px;
+  padding: 16px 20px;
+  font-size: 18px;
+  border-radius: 30px;
+  border: none;
+  outline: none;
+  background: #1b1e24;
+  color: #fff;
+}
+
+#suggestions {
+  margin-top: 20px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.suggestion {
+  cursor: pointer;
+  margin: 6px 0;
+}
+
+.suggestion:hover {
+  text-decoration: underline;
+}
+
+/* ===== RESULTADOS ===== */
+
+#results {
+  display: none;
+  padding: 20px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.result {
+  padding: 16px;
+  border-bottom: 1px solid #2a2d34;
+  cursor: pointer;
+}
+
+.result:hover {
+  background: #1b1e24;
+}
+
+.result-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.result-url {
+  font-size: 14px;
+  color: #7dd3fc;
+  word-break: break-all;
+}
+
+.result-desc {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-top: 6px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<!-- TELA INICIAL -->
+<div id="home">
+  <input id="searchBox" placeholder="Pesquisar ou digitar URL..." />
+  <div id="suggestions">
+    <div class="suggestion">como funciona javascript</div>
+    <div class="suggestion">wikipedia</div>
+    <div class="suggestion">notícias tecnologia</div>
+    <div class="suggestion">clima hoje</div>
+  </div>
+</div>
+
+<!-- RESULTADOS -->
+<div id="results"></div>
+
+<script>
+const searchBox = document.getElementById("searchBox");
+const home = document.getElementById("home");
+const results = document.getElementById("results");
+
+document.querySelectorAll(".suggestion").forEach(el => {
+  el.onclick = () => startSearch(el.innerText);
+});
+
+searchBox.addEventListener("keydown", e => {
+  if (e.key === "Enter") startSearch(searchBox.value);
+});
+
+function isURL(text) {
+  return text.includes(".") && !text.includes(" ");
+}
+
+function startSearch(query) {
+  if (!query) return;
+
+  if (isURL(query)) {
+    let url = query.startsWith("http") ? query : "https://" + query;
+    window.open(url, "_blank");
+    return;
+  }
+
+  loadDuckResults(query);
+}
+
+function loadDuckResults(query) {
+  home.style.display = "none";
+  results.style.display = "block";
+  results.innerHTML = "<p>Buscando resultados...</p>";
+
+  const searchURL =
+    "https://duckduckgo.com/html/?q=" + encodeURIComponent(query);
+
+  // GitHub Pages não pode ler HTML do Duck,
+  // então mostramos resultados como links diretos
+  results.innerHTML = `
+    <div class="result" onclick="openExternal('${searchURL}')">
+      <div class="result-title">Ver resultados no DuckDuckGo</div>
+      <div class="result-url">${searchURL}</div>
+      <div class="result-desc">
+        Os resultados serão exibidos fora da plataforma.
+      </div>
+    </div>
+  `;
+}
+
+function openExternal(url) {
+  const confirmLeave = confirm(
+    "Você será redirecionado para uma URL fora da plataforma.\nDeseja continuar?"
+  );
+  if (confirmLeave) {
+    window.open(url, "_blank");
+  }
+}
+</script>
+
+</body>
+</html>
